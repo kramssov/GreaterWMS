@@ -99,7 +99,7 @@ export default {
   cyclecountrecorder: 'Count Recorder',
   search: 'Search Word',
   creater: 'Creater',
-  createtime: 'Cteate Time',
+  createtime: 'Create Time',
   updatetime: 'Update Time',
   action: 'Action',
   previous: 'Previous',
