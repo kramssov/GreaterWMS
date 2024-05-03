@@ -4,7 +4,7 @@
   <p>完全开源的仓库管理系统</p>
 
 <!-- Badges -->
-![License: AGPLv3](https://img.shields.io/github/license/GreaterWMS/GreaterWMS)
+![License: APLv2](https://img.shields.io/github/license/GreaterWMS/GreaterWMS)
 ![Release Version (latest Version)](https://img.shields.io/github/v/release/GreaterWMS/GreaterWMS?color=orange&include_prereleases)
 ![QR Code Support](https://img.shields.io/badge/QR--Code-Support-orange.svg)
 ![Docker Support](https://img.shields.io/badge/Docker-Support-orange.svg)
@@ -28,8 +28,6 @@
 [![BiliBili](https://img.shields.io/badge/BiliBili-4987-red)](https://space.bilibili.com/407321291/channel/seriesdetail?sid=776320)
 </div>
 
-#### 自2.1.26版本以后，GreaterWMS将开源协议调整为AGPLv3，个人学习是无限制的，商用需要购买商用授权
-
 ## :rocket: 找到我们
 <h4>
     <a href="https://www.56yhz.com/">官网首页</a>
@@ -38,7 +36,7 @@
     <a href="https://production.56yhz.com/">演示地址</a>
 </h4>
 <h4>
-  <a href="https://space.bilibili.com/407321291/channel/seriesdetail?sid=776320">相关视频</a>
+  <a href="https://space.bilibili.com/407321291?spm_id_from=333.1007.0.0">教程视频</a>
 </h4>
 <h4>
   <a href="https://github.com/GreaterWMS/GreaterwMS/issues/new?template=bug_report.md&title=[BUG]">提交一个Bug</a>
@@ -49,6 +47,8 @@
 <h4>
   <a href="https://www.56yhz.com/greaterwms.html">英文文档</a>
 </h4>
+
+QQ技术交流群：289548524
 
 [//]: # (About the Project)
 ### :star2: 关于此项目

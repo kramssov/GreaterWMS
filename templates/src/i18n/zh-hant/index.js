@@ -5,7 +5,10 @@ export default {
   failed: 'Action failed',
   success: 'Action was successful',
   index: {
+    operation: '操作手冊',
+    app_store: '商用授權',
     app_title: 'APP名稱',
+    signin: '訪問地址：',
     slogan: '宣傳語',
     server: '請求地址',
     index_title: '倉庫管理平臺',
@@ -68,7 +71,8 @@ export default {
     customerdn: '客戶訂單',
     supplierasn: '供應商訂單',
     uploadcenter: '上傳中心 ',
-    downloadcenter: '下載中心'
+    downloadcenter: '下載中心',
+    cloudwarehouse: '萬倉互聯'
   },
   contact: '立即溝通',
   sendmessage: '給他發一條消息',
@@ -438,17 +442,23 @@ export default {
     binsize: '庫位尺寸',
     property: '庫位屬性',
     printbin: '打印庫位標簽',
+    view_warehouseset: {
+      error1: '請輸入倉庫名稱',
+      error2: '請輸入倉庫所在城市',
+      error3: '請輸入倉庫地址',
+      error4: '請輸入倉庫聯係方式給',
+      error5: '請輸入倉庫負責人'
+    },
     view_warehouse: {
       warehouse_name: '倉庫名稱',
       warehouse_city: '所在城市',
       warehouse_address: '地址',
       warehouse_contact: '聯繫方式',
       warehouse_manager: '負責人',
-      error1: '請輸入倉庫名稱',
-      error2: '請輸入倉庫所在城市',
-      error3: '請輸入倉庫地址',
-      error4: '請輸入倉庫聯係方式給',
-      error5: '請輸入倉庫負責人'
+      square_measure: '可用面積',
+      city_search: '都市搜索',
+      publish_warehouse: '發佈倉庫',
+      Nopublish_warehouse: '召回倉庫'
     },
     view_binset: {
       bin_name: '庫位名稱',

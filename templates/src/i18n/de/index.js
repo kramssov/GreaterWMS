@@ -5,6 +5,9 @@ export default {
   failed: 'Action failed',
   success: 'Action was successful',
   index: {
+    operation: 'Bedienungsanleitung',
+    app_store: 'Kommerzielle Lizenz',
+    signin: 'Zugangsadresse:',
     app_title: 'APP-Titel',
     slogan: 'Slogan',
     server: 'Basis-URL anfordern',
@@ -55,7 +58,7 @@ export default {
     equipment: 'Ausrüstungsunterstützung'
   },
   menuItem: {
-    Dashboard: 'Dashboard',
+    dashboard: 'Dashboard',
     inbound: 'Eingehend',
     outbound: 'Ausgehend',
     stock: 'Inventar',
@@ -68,7 +71,8 @@ export default {
     customerdn: 'Kunden-DN',
     supplierasn: 'Lieferanten-ASN',
     uploadcenter: 'Upload-Center',
-    downloadcenter: 'Downloadcenter'
+    downloadcenter: 'Downloadcenter',
+    cloudwarehouse: 'Lagerverbindung'
   },
   contact: 'Jetzt kommunizieren',
   sendmessage: 'schick ihm eine Nachricht',
@@ -450,7 +454,11 @@ export default {
       warehouse_city: 'Ort Stadt',
       warehouse_address: 'die Anschrift',
       warehouse_contact: 'Kontaktinformation',
-      warehouse_manager: 'Rektor'
+      warehouse_manager: 'Rektor',
+      square_measure: 'Nutzfläche',
+      city_search: 'Stadtsuche',
+      publish_warehouse: 'Lagerhaus veröffentlichen',
+      Nopublish_warehouse: 'Rückruflager'
     },
     view_binset: {
       bin_name: 'Standortnamen',

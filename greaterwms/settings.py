@@ -105,6 +105,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,
+        }
     }
 }
 
@@ -158,7 +161,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace('\\', '/')
 SPECTACULAR_SETTINGS = {
     'TITLE': 'GreaterWMS',
     'DESCRIPTION': 'GreaterWMS API Documents',
-    'VERSION': '2.1.37',
+    'VERSION': '2.1.48',
     'SERVE_INCLUDE_SCHEMA': False,
     # OTHER SETTINGS
     'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
@@ -345,8 +348,8 @@ LAZY_RENDERING = True
 NATIVE_SCROLLBARS = True
 
 ALLOCATION_SECONDS = 1
-GET_THROTTLE = 5
-POST_THROTTLE = 5
-PUT_THROTTLE = 5
-PATCH_THROTTLE = 5
-DELETE_THROTTLE = 5
+GET_THROTTLE = 500
+POST_THROTTLE = 500
+PUT_THROTTLE = 500
+PATCH_THROTTLE = 500
+DELETE_THROTTLE = 500

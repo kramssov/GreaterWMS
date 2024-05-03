@@ -93,17 +93,17 @@ class StockBinViewSet(viewsets.ModelViewSet):
                 raise APIException({"detail": "Please Enter The Bin Name"})
             else:
                 current_bin_detail = binset.objects.filter(openid=self.request.auth.openid,
-                                                   bin_name=str(data['bin_name'])).first()
+                                                   bin_name=str(data['bin_name']), is_delete=False).first()
                 move_to_bin_detail = binset.objects.filter(openid=self.request.auth.openid,
-                                                   bin_name=str(data['move_to_bin'])).first()
+                                                   bin_name=str(data['move_to_bin']), is_delete=False).first()
                 goods_qty_change = stocklist.objects.filter(openid=self.request.auth.openid,
                                                             goods_code=str(data['goods_code'])).first()
                 if int(data['move_qty']) <= 0:
                     raise APIException({"detail": "Move QTY Must > 0"})
                 else:
-                    bin_move_qty_res = qs.goods_qty - qs.pick_qty - qs.picked_qty - int(data['move_qty'])
+                    bin_move_qty_res = qs.goods_qty - qs.pick_qty - int(data['move_qty'])
                     if bin_move_qty_res > 0:
-                        qs.goods_qty = qs.goods_qty - qs.pick_qty - int(data['move_qty'])
+                        qs.goods_qty = qs.pick_qty + bin_move_qty_res
                         if current_bin_detail.bin_property == 'Damage':
                             if move_to_bin_detail.bin_property == 'Damage':
                                 pass
@@ -162,13 +162,20 @@ class StockBinViewSet(viewsets.ModelViewSet):
                                                      t_code=Md5.md5(str(data['goods_code'])),
                                                      create_time=qs.create_time
                                                      )
-                        if move_to_bin_detail.empty_label == True:
+                        if move_to_bin_detail.empty_label is True:
                             move_to_bin_detail.empty_label = False
                             move_to_bin_detail.save()
                         goods_qty_change.save()
                         qs.save()
+                        delete_data = StockBinModel.objects.filter(openid=self.request.auth.openid,
+                                                                   goods_qty=0,
+                                                                   pick_qty=0,
+                                                                   picked_qty=0)
+                        if delete_data.exists():
+                            for i in delete_data:
+                                i.delete()
                     elif bin_move_qty_res == 0:
-                        qs.goods_qty = qs.picked_qty
+                        qs.goods_qty = qs.pick_qty
                         if current_bin_detail.bin_property == 'Damage':
                             if move_to_bin_detail.bin_property == 'Damage':
                                 pass
@@ -227,20 +234,22 @@ class StockBinViewSet(viewsets.ModelViewSet):
                                                      t_code=Md5.md5(str(data['goods_code'])),
                                                      create_time=qs.create_time
                                                      )
-                        if move_to_bin_detail.empty_label == True:
+                        if move_to_bin_detail.empty_label is True:
                             move_to_bin_detail.empty_label = False
                             move_to_bin_detail.save()
                         goods_qty_change.save()
-                        if qs.goods_qty == 0:
-                            qs.delete()
-                        else:
-                            qs.save()
+                        qs.save()
                         if StockBinModel.objects.filter(openid=self.request.auth.openid,
-                                                        bin_name=str(data['bin_name'])).exists():
-                            pass
-                        else:
+                                                        bin_name=str(data['bin_name'])).exists() is False:
                             current_bin_detail.empty_label = True
-                        current_bin_detail.save()
+                            current_bin_detail.save()
+                        delete_data = StockBinModel.objects.filter(openid=self.request.auth.openid,
+                                                                   goods_qty=0,
+                                                                   pick_qty=0,
+                                                                   picked_qty=0)
+                        if delete_data.exists():
+                            for i in delete_data:
+                                i.delete()
                     elif bin_move_qty_res < 0:
                         raise APIException({"detail": "Move Qty must < Bin Goods Qty"})
                     else:
@@ -256,19 +265,19 @@ class StockBinViewSet(viewsets.ModelViewSet):
                 raise APIException({"detail": "Please Enter The Bin Name"})
         for j in range(len(data)):
             current_bin_detail = binset.objects.filter(openid=self.request.auth.openid,
-                                                       bin_name=str(data[j]['bin_name'])).first()
+                                                       bin_name=str(data[j]['bin_name']), is_delete=False).first()
             move_to_bin_detail = binset.objects.filter(openid=self.request.auth.openid,
-                                                       bin_name=str(data[j]['move_to_bin'])).first()
+                                                       bin_name=str(data[j]['move_to_bin']), is_delete=False).first()
             goods_qty_change = stocklist.objects.filter(openid=self.request.auth.openid,
                                                         goods_code=str(data[j]['goods_code'])).first()
             qs_project = qs.filter(t_code=data[j]['t_code']).first()
             if int(data[j]['move_qty']) <= 0:
                 raise APIException({"detail": "Move QTY Must > 0"})
             else:
-                bin_move_qty_res = qs_project.goods_qty - qs_project.pick_qty - qs_project.picked_qty - int(
+                bin_move_qty_res = qs_project.goods_qty - qs_project.pick_qty - int(
                     data[j]['move_qty'])
                 if bin_move_qty_res > 0:
-                    qs_project.goods_qty = qs_project.goods_qty - qs_project.pick_qty - int(data[j]['move_qty'])
+                    qs_project.goods_qty = qs_project.pick_qty + bin_move_qty_res
                     if current_bin_detail.bin_property == 'Damage':
                         if move_to_bin_detail.bin_property == 'Damage':
                             pass
@@ -339,13 +348,20 @@ class StockBinViewSet(viewsets.ModelViewSet):
                                                  t_code=Md5.md5(str(data[j]['goods_code'])),
                                                  create_time=qs_project.create_time
                                                  )
-                    if move_to_bin_detail.empty_label == True:
+                    if move_to_bin_detail.empty_label is True:
                         move_to_bin_detail.empty_label = False
                         move_to_bin_detail.save()
                     goods_qty_change.save()
                     qs_project.save()
+                    delete_data = StockBinModel.objects.filter(openid=self.request.auth.openid,
+                                                               goods_qty=0,
+                                                               pick_qty=0,
+                                                               picked_qty=0)
+                    if delete_data.exists():
+                        for i in delete_data:
+                            i.delete()
                 elif bin_move_qty_res == 0:
-                    qs_project.goods_qty = qs_project.picked_qty
+                    qs_project.goods_qty = qs_project.pick_qty
                     if current_bin_detail.bin_property == 'Damage':
                         if move_to_bin_detail.bin_property == 'Damage':
                             pass
@@ -416,20 +432,22 @@ class StockBinViewSet(viewsets.ModelViewSet):
                                                  t_code=Md5.md5(str(data[j]['goods_code'])),
                                                  create_time=qs_project.create_time
                                                  )
-                    if move_to_bin_detail.empty_label == True:
+                    if move_to_bin_detail.empty_label is True:
                         move_to_bin_detail.empty_label = False
                         move_to_bin_detail.save()
                     goods_qty_change.save()
-                    if qs_project.goods_qty == 0:
-                        qs_project.delete()
-                    else:
-                        qs_project.save()
+                    qs_project.save()
                     if StockBinModel.objects.filter(openid=self.request.auth.openid,
-                                                    bin_name=str(data[j]['bin_name'])).exists():
-                        pass
-                    else:
+                                                    bin_name=str(data[j]['bin_name'])).exists() is False:
                         current_bin_detail.empty_label = True
-                    current_bin_detail.save()
+                        current_bin_detail.save()
+                    delete_data = StockBinModel.objects.filter(openid=self.request.auth.openid,
+                                                               goods_qty=0,
+                                                               pick_qty=0,
+                                                               picked_qty=0)
+                    if delete_data.exists():
+                        for i in delete_data:
+                            i.delete()
                 elif bin_move_qty_res < 0:
                     raise APIException({"detail": "Move Qty must < Bin Goods Qty"})
                 else:

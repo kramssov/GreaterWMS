@@ -653,9 +653,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                                     goods_code=str(dn_detail_list[i].goods_code),
                                                     is_delete=False).first()
                 if stocklist.objects.filter(openid=self.request.auth.openid,
-                                            goods_code=str(dn_detail_list[i].goods_code)).exists():
-                    pass
-                else:
+                                            goods_code=str(dn_detail_list[i].goods_code)).exists() is False:
                     stocklist.objects.create(openid=self.request.auth.openid,
                                              goods_code=str(goods_detail.goods_code),
                                              goods_desc=goods_detail.goods_desc,
@@ -665,21 +663,19 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                                                 dn_detail_list[i].goods_code)).first()
                 goods_bin_stock_list = stockbin.objects.filter(openid=self.request.auth.openid,
                                                                goods_code=str(dn_detail_list[i].goods_code),
-                                                               bin_property="Normal").order_by('id')
+                                                               bin_property="Normal", goods_qty__gt=0).order_by('id')
                 can_pick_qty = goods_qty_change.onhand_stock - \
                                goods_qty_change.inspect_stock - \
                                goods_qty_change.hold_stock - \
                                goods_qty_change.damage_stock - \
-                               goods_qty_change.pick_stock - \
-                               goods_qty_change.picked_stock
+                               goods_qty_change.pick_stock
                 if can_pick_qty > 0:
                     if dn_detail_list[i].goods_qty > can_pick_qty:
-                        if qs[v].back_order_label == False:
+                        if qs[v].back_order_label is False:
                             dn_pick_qty = dn_detail_list[i].pick_qty
                             for j in range(len(goods_bin_stock_list)):
                                 bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - \
-                                                   goods_bin_stock_list[j].pick_qty - \
-                                                   goods_bin_stock_list[j].picked_qty
+                                                   goods_bin_stock_list[j].pick_qty
                                 if bin_can_pick_qty > 0:
                                     goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                            j].pick_qty + bin_can_pick_qty
@@ -703,12 +699,10 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                     continue
                             dn_detail_list[i].pick_qty = dn_pick_qty
                             dn_back_order_qty = dn_detail_list[i].goods_qty - \
-                                                dn_detail_list[i].pick_qty - \
-                                                dn_detail_list[i].picked_qty
+                                                dn_detail_list[i].pick_qty
+                            goods_qty_change.back_order_stock = dn_detail_list[i].goods_qty - can_pick_qty
                             dn_detail_list[i].goods_qty = dn_pick_qty
                             dn_detail_list[i].dn_status = 3
-                            goods_qty_change.back_order_stock = goods_qty_change.back_order_stock + \
-                                                                dn_back_order_qty
                             back_order_goods_volume = round(goods_detail.unit_volume * dn_back_order_qty, 4)
                             back_order_goods_weight = round(
                                 (goods_detail.goods_weight * dn_back_order_qty) / 1000, 4)
@@ -735,7 +729,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                             dn_detail_list[i].goods_volume = dn_detail_list[i].goods_volume - \
                                                              back_order_goods_volume
                             dn_detail_list[i].goods_cost = dn_detail_list[i].goods_cost - \
-                                                             back_order_goods_cost
+                                                           back_order_goods_cost
                             back_order_goods_weight_list.append(back_order_goods_weight)
                             back_order_goods_volume_list.append(back_order_goods_volume)
                             back_order_goods_cost_list.append(back_order_goods_cost)
@@ -745,12 +739,13 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                             dn_pick_qty = dn_detail_list[i].pick_qty
                             for j in range(len(goods_bin_stock_list)):
                                 bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - \
-                                                   goods_bin_stock_list[j].pick_qty - \
-                                                   goods_bin_stock_list[j].picked_qty
+                                                   goods_bin_stock_list[j].pick_qty
                                 if bin_can_pick_qty > 0:
                                     goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                            j].pick_qty + bin_can_pick_qty
                                     goods_qty_change.ordered_stock = goods_qty_change.ordered_stock - bin_can_pick_qty
+                                    goods_qty_change.can_order_stock = goods_qty_change.can_order_stock - bin_can_pick_qty
+                                    goods_qty_change.back_order_stock = goods_qty_change.back_order_stock - bin_can_pick_qty
                                     goods_qty_change.pick_stock = goods_qty_change.pick_stock + bin_can_pick_qty
                                     picking_list.append(PickingListModel(openid=self.request.auth.openid,
                                                                          dn_code=dn_detail_list[i].dn_code,
@@ -770,8 +765,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                     continue
                             dn_detail_list[i].pick_qty = dn_pick_qty
                             dn_back_order_qty = dn_detail_list[i].goods_qty - \
-                                                dn_detail_list[i].pick_qty - \
-                                                dn_detail_list[i].picked_qty
+                                                dn_detail_list[i].pick_qty
                             dn_detail_list[i].goods_qty = dn_pick_qty
                             dn_detail_list[i].dn_status = 3
                             back_order_goods_volume = round(goods_detail.unit_volume * dn_back_order_qty, 4)
@@ -800,29 +794,28 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                             dn_detail_list[i].goods_volume = dn_detail_list[i].goods_volume - \
                                                              back_order_goods_volume
                             dn_detail_list[i].goods_cost = dn_detail_list[i].goods_cost - \
-                                                             back_order_goods_cost
+                                                           back_order_goods_cost
                             back_order_goods_weight_list.append(back_order_goods_weight)
                             back_order_goods_volume_list.append(back_order_goods_volume)
                             back_order_goods_cost_list.append(back_order_goods_cost)
                             dn_detail_list[i].save()
                     elif dn_detail_list[i].goods_qty == can_pick_qty:
                         for j in range(len(goods_bin_stock_list)):
-                            bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - goods_bin_stock_list[
-                                j].pick_qty - \
-                                               goods_bin_stock_list[j].picked_qty
+                            bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - goods_bin_stock_list[j].pick_qty
                             if bin_can_pick_qty > 0:
-                                dn_need_pick_qty = dn_detail_list[i].goods_qty - dn_detail_list[i].pick_qty - \
-                                                   dn_detail_list[i].picked_qty
+                                dn_need_pick_qty = dn_detail_list[i].goods_qty - dn_detail_list[i].pick_qty
                                 if dn_need_pick_qty > bin_can_pick_qty:
                                     goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                            j].pick_qty + bin_can_pick_qty
+                                    if qs[v].back_order_label is True:
+                                        goods_qty_change.can_order_stock = goods_qty_change.can_order_stock - bin_can_pick_qty
+                                        goods_qty_change.back_order_stock = goods_qty_change.back_order_stock - bin_can_pick_qty
                                     goods_qty_change.ordered_stock = goods_qty_change.ordered_stock - bin_can_pick_qty
                                     goods_qty_change.pick_stock = goods_qty_change.pick_stock + bin_can_pick_qty
                                     picking_list.append(PickingListModel(openid=self.request.auth.openid,
                                                                          dn_code=dn_detail_list[i].dn_code,
                                                                          bin_name=goods_bin_stock_list[j].bin_name,
-                                                                         goods_code=goods_bin_stock_list[
-                                                                             j].goods_code,
+                                                                         goods_code=goods_bin_stock_list[j].goods_code,
                                                                          pick_qty=bin_can_pick_qty,
                                                                          creater=str(staff_name),
                                                                          t_code=goods_bin_stock_list[j].t_code))
@@ -833,13 +826,15 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                 elif dn_need_pick_qty == bin_can_pick_qty:
                                     goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                            j].pick_qty + bin_can_pick_qty
+                                    if qs[v].back_order_label is True:
+                                        goods_qty_change.can_order_stock = goods_qty_change.can_order_stock - bin_can_pick_qty
+                                        goods_qty_change.back_order_stock = goods_qty_change.back_order_stock - bin_can_pick_qty
                                     goods_qty_change.ordered_stock = goods_qty_change.ordered_stock - bin_can_pick_qty
                                     goods_qty_change.pick_stock = goods_qty_change.pick_stock + bin_can_pick_qty
                                     picking_list.append(PickingListModel(openid=self.request.auth.openid,
                                                                          dn_code=dn_detail_list[i].dn_code,
                                                                          bin_name=goods_bin_stock_list[j].bin_name,
-                                                                         goods_code=goods_bin_stock_list[
-                                                                             j].goods_code,
+                                                                         goods_code=goods_bin_stock_list[j].goods_code,
                                                                          pick_qty=bin_can_pick_qty,
                                                                          creater=str(staff_name),
                                                                          t_code=goods_bin_stock_list[j].t_code))
@@ -859,15 +854,16 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                     elif dn_detail_list[i].goods_qty < can_pick_qty:
                         for j in range(len(goods_bin_stock_list)):
                             bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - \
-                                               goods_bin_stock_list[j].pick_qty - \
-                                               goods_bin_stock_list[j].picked_qty
+                                               goods_bin_stock_list[j].pick_qty
                             if bin_can_pick_qty > 0:
                                 dn_need_pick_qty = dn_detail_list[i].goods_qty - \
-                                                   dn_detail_list[i].pick_qty - \
-                                                   dn_detail_list[i].picked_qty
+                                                   dn_detail_list[i].pick_qty
                                 if dn_need_pick_qty > bin_can_pick_qty:
                                     goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[j].pick_qty + \
                                                                        bin_can_pick_qty
+                                    if qs[v].back_order_label is True:
+                                        goods_qty_change.can_order_stock = goods_qty_change.can_order_stock - bin_can_pick_qty
+                                        goods_qty_change.back_order_stock = goods_qty_change.back_order_stock - bin_can_pick_qty
                                     goods_qty_change.ordered_stock = goods_qty_change.ordered_stock - \
                                                                      bin_can_pick_qty
                                     goods_qty_change.pick_stock = goods_qty_change.pick_stock + \
@@ -875,8 +871,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                     picking_list.append(PickingListModel(openid=self.request.auth.openid,
                                                                          dn_code=dn_detail_list[i].dn_code,
                                                                          bin_name=goods_bin_stock_list[j].bin_name,
-                                                                         goods_code=goods_bin_stock_list[
-                                                                             j].goods_code,
+                                                                         goods_code=goods_bin_stock_list[j].goods_code,
                                                                          pick_qty=bin_can_pick_qty,
                                                                          creater=str(staff_name),
                                                                          t_code=goods_bin_stock_list[j].t_code))
@@ -889,13 +884,15 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                 elif dn_need_pick_qty == bin_can_pick_qty:
                                     goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                            j].pick_qty + bin_can_pick_qty
+                                    if qs[v].back_order_label is True:
+                                        goods_qty_change.can_order_stock = goods_qty_change.can_order_stock - bin_can_pick_qty
+                                        goods_qty_change.back_order_stock = goods_qty_change.back_order_stock - bin_can_pick_qty
                                     goods_qty_change.ordered_stock = goods_qty_change.ordered_stock - bin_can_pick_qty
                                     goods_qty_change.pick_stock = goods_qty_change.pick_stock + bin_can_pick_qty
                                     picking_list.append(PickingListModel(openid=self.request.auth.openid,
                                                                          dn_code=dn_detail_list[i].dn_code,
                                                                          bin_name=goods_bin_stock_list[j].bin_name,
-                                                                         goods_code=goods_bin_stock_list[
-                                                                             j].goods_code,
+                                                                         goods_code=goods_bin_stock_list[j].goods_code,
                                                                          pick_qty=bin_can_pick_qty,
                                                                          creater=str(staff_name),
                                                                          t_code=goods_bin_stock_list[j].t_code))
@@ -909,6 +906,9 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                 elif dn_need_pick_qty < bin_can_pick_qty:
                                     goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[j].pick_qty + \
                                                                        dn_need_pick_qty
+                                    if qs[v].back_order_label is True:
+                                        goods_qty_change.can_order_stock = goods_qty_change.can_order_stock - dn_need_pick_qty
+                                        goods_qty_change.back_order_stock = goods_qty_change.back_order_stock - dn_need_pick_qty
                                     goods_qty_change.ordered_stock = goods_qty_change.ordered_stock - \
                                                                      dn_need_pick_qty
                                     goods_qty_change.pick_stock = goods_qty_change.pick_stock + \
@@ -916,8 +916,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                     picking_list.append(PickingListModel(openid=self.request.auth.openid,
                                                                          dn_code=dn_detail_list[i].dn_code,
                                                                          bin_name=goods_bin_stock_list[j].bin_name,
-                                                                         goods_code=goods_bin_stock_list[
-                                                                             j].goods_code,
+                                                                         goods_code=goods_bin_stock_list[j].goods_code,
                                                                          pick_qty=dn_need_pick_qty,
                                                                          creater=str(staff_name),
                                                                          t_code=goods_bin_stock_list[j].t_code))
@@ -934,10 +933,8 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                 continue
                             else:
                                 continue
-                    else:
-                        continue
                 elif can_pick_qty == 0:
-                    if qs[v].back_order_label == False:
+                    if qs[v].back_order_label is False:
                         goods_qty_change.back_order_stock = goods_qty_change.back_order_stock + dn_detail_list[
                             i].goods_qty
                         back_order_goods_volume = round(goods_detail.unit_volume * dn_detail_list[i].goods_qty, 4)
@@ -978,7 +975,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                     back_order_total_weight = sumOfList(back_order_goods_weight_list,
                                                         len(back_order_goods_weight_list))
                     back_order_total_cost = sumOfList(back_order_goods_cost_list,
-                                                        len(back_order_goods_cost_list))
+                                                      len(back_order_goods_cost_list))
                     customer_city = customer.objects.filter(openid=self.request.auth.openid,
                                                             customer_name=str(qs[v].customer),
                                                             is_delete=False).first().customer_city
@@ -1007,12 +1004,9 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                                                            transportation_fee[k].min_payment)
                             transportation_back_order_cost = transportation_calculate(back_order_total_weight,
                                                                                       back_order_total_volume,
-                                                                                      transportation_fee[
-                                                                                          k].weight_fee,
-                                                                                      transportation_fee[
-                                                                                          k].volume_fee,
-                                                                                      transportation_fee[
-                                                                                          k].min_payment)
+                                                                                      transportation_fee[k].weight_fee,
+                                                                                      transportation_fee[k].volume_fee,
+                                                                                      transportation_fee[k].min_payment)
                             transportation_detail = {
                                 "transportation_supplier": transportation_fee[k].transportation_supplier,
                                 "transportation_cost": transportation_cost
@@ -1051,8 +1045,6 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                     PickingListModel.objects.bulk_create(picking_list, batch_size=100)
                     qs[v].dn_status = 3
                     qs[v].save()
-                else:
-                    continue
             elif picking_list_label == 0:
                 if back_order_list_label == 1:
                     DnDetailModel.objects.bulk_create(back_order_list, batch_size=100)
@@ -1073,10 +1065,6 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                     qs[v].is_delete = True
                     qs[v].dn_status = 3
                     qs[v].save()
-                elif back_order_list_label == 0:
-                    continue
-                else:
-                    continue
             else:
                 continue
         return Response({"detail": "success"}, status=200)
@@ -1123,21 +1111,19 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                                                     dn_detail_list[i].goods_code)).first()
                     goods_bin_stock_list = stockbin.objects.filter(openid=self.request.auth.openid,
                                                                    goods_code=str(dn_detail_list[i].goods_code),
-                                                                   bin_property="Normal").order_by('id')
+                                                                   bin_property="Normal", goods_qty__gt=0).order_by('id')
                     can_pick_qty = goods_qty_change.onhand_stock - \
                                    goods_qty_change.inspect_stock - \
                                    goods_qty_change.hold_stock - \
                                    goods_qty_change.damage_stock - \
-                                   goods_qty_change.pick_stock - \
-                                   goods_qty_change.picked_stock
+                                   goods_qty_change.pick_stock
                     if can_pick_qty > 0:
                         if dn_detail_list[i].goods_qty > can_pick_qty:
                             if qs.back_order_label is False:
                                 dn_pick_qty = dn_detail_list[i].pick_qty
                                 for j in range(len(goods_bin_stock_list)):
                                     bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - \
-                                                       goods_bin_stock_list[j].pick_qty - \
-                                                       goods_bin_stock_list[j].picked_qty
+                                                       goods_bin_stock_list[j].pick_qty
                                     if bin_can_pick_qty > 0:
                                         goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                                j].pick_qty + bin_can_pick_qty
@@ -1161,8 +1147,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                         continue
                                 dn_detail_list[i].pick_qty = dn_pick_qty
                                 dn_back_order_qty = dn_detail_list[i].goods_qty - \
-                                                   dn_detail_list[i].pick_qty - \
-                                                   dn_detail_list[i].picked_qty
+                                                   dn_detail_list[i].pick_qty
                                 goods_qty_change.back_order_stock = dn_detail_list[i].goods_qty - can_pick_qty
                                 dn_detail_list[i].goods_qty = dn_pick_qty
                                 dn_detail_list[i].dn_status = 3
@@ -1202,8 +1187,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                 dn_pick_qty = dn_detail_list[i].pick_qty
                                 for j in range(len(goods_bin_stock_list)):
                                     bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - \
-                                                       goods_bin_stock_list[j].pick_qty - \
-                                                       goods_bin_stock_list[j].picked_qty
+                                                       goods_bin_stock_list[j].pick_qty
                                     if bin_can_pick_qty > 0:
                                         goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                                j].pick_qty + bin_can_pick_qty
@@ -1229,8 +1213,7 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                         continue
                                 dn_detail_list[i].pick_qty = dn_pick_qty
                                 dn_back_order_qty = dn_detail_list[i].goods_qty - \
-                                                    dn_detail_list[i].pick_qty - \
-                                                    dn_detail_list[i].picked_qty
+                                                    dn_detail_list[i].pick_qty
                                 dn_detail_list[i].goods_qty = dn_pick_qty
                                 dn_detail_list[i].dn_status = 3
                                 back_order_goods_volume = round(goods_detail.unit_volume * dn_back_order_qty, 4)
@@ -1266,10 +1249,9 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                                 dn_detail_list[i].save()
                         elif dn_detail_list[i].goods_qty == can_pick_qty:
                             for j in range(len(goods_bin_stock_list)):
-                                bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - goods_bin_stock_list[j].pick_qty - \
-                                                   goods_bin_stock_list[j].picked_qty
+                                bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - goods_bin_stock_list[j].pick_qty
                                 if bin_can_pick_qty > 0:
-                                    dn_need_pick_qty = dn_detail_list[i].goods_qty - dn_detail_list[i].pick_qty - dn_detail_list[i].picked_qty
+                                    dn_need_pick_qty = dn_detail_list[i].goods_qty - dn_detail_list[i].pick_qty
                                     if dn_need_pick_qty > bin_can_pick_qty:
                                         goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[
                                                                                j].pick_qty + bin_can_pick_qty
@@ -1320,12 +1302,10 @@ class DnOrderReleaseViewSet(viewsets.ModelViewSet):
                         elif dn_detail_list[i].goods_qty < can_pick_qty:
                             for j in range(len(goods_bin_stock_list)):
                                 bin_can_pick_qty = goods_bin_stock_list[j].goods_qty - \
-                                                   goods_bin_stock_list[j].pick_qty - \
-                                                   goods_bin_stock_list[j].picked_qty
+                                                   goods_bin_stock_list[j].pick_qty
                                 if bin_can_pick_qty > 0:
                                     dn_need_pick_qty = dn_detail_list[i].goods_qty - \
-                                                       dn_detail_list[i].pick_qty - \
-                                                       dn_detail_list[i].picked_qty
+                                                       dn_detail_list[i].pick_qty
                                     if dn_need_pick_qty > bin_can_pick_qty:
                                         goods_bin_stock_list[j].pick_qty = goods_bin_stock_list[j].pick_qty + \
                                                                            bin_can_pick_qty
@@ -1630,6 +1610,13 @@ class DnPickedViewSet(viewsets.ModelViewSet):
             return self.http_method_not_allowed(request=self.request)
 
     def create(self, request, pk):
+        delete_data = stockbin.objects.filter(openid=self.request.auth.openid,
+                                                   goods_qty=0,
+                                                   pick_qty=0,
+                                                   picked_qty=0)
+        if delete_data.exists():
+            for i in delete_data:
+                i.delete()
         qs = self.get_object()
         if qs.dn_status != 3:
             raise APIException({"detail": "This dn Status Not Pre Pick"})
@@ -1669,6 +1656,7 @@ class DnPickedViewSet(viewsets.ModelViewSet):
                                                  goods_code=bin_qty_change.goods_code,
                                                  goods_desc=bin_qty_change.goods_desc,
                                                  goods_qty=0 - int(data['goodsData'][j].get('pick_qty')),
+                                                 store_code=bin_qty_change.t_code,
                                                  creater=str(staff_name)
                                                  )
                 cur_date = timezone.now().date()
@@ -1682,22 +1670,26 @@ class DnPickedViewSet(viewsets.ModelViewSet):
                                           goods_code=bin_qty_change.goods_code,
                                           create_time__gte=cur_date).update(goods_qty=cycle_qty)
                 if int(data['goodsData'][j].get('pick_qty')) == pick_qty_change.pick_qty:
+                    goods_qty_change.onhand_stock = goods_qty_change.onhand_stock - int(data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.pick_stock = goods_qty_change.pick_stock - int(data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.picked_stock = goods_qty_change.picked_stock + int(data['goodsData'][j].get('pick_qty'))
                     pick_qty_change.picked_qty = int(data['goodsData'][j].get('pick_qty'))
                     pick_qty_change.picking_status = 1
+                    bin_qty_change.goods_qty = bin_qty_change.goods_qty - int(data['goodsData'][j].get('pick_qty'))
                     bin_qty_change.pick_qty = bin_qty_change.pick_qty - int(data['goodsData'][j].get('pick_qty'))
                     bin_qty_change.picked_qty = bin_qty_change.picked_qty + int(data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.save()
                     pick_qty_change.save()
                     bin_qty_change.save()
                 elif int(data['goodsData'][j].get('pick_qty')) < pick_qty_change.pick_qty:
+                    goods_qty_change.onhand_stock = goods_qty_change.onhand_stock - int(data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.pick_stock = goods_qty_change.pick_stock - dn_detail.pick_qty
                     goods_qty_change.picked_stock = goods_qty_change.picked_stock + int(data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.can_order_stock = goods_qty_change.can_order_stock + (int(pick_qty_change.pick_qty) - int(
                         data['goodsData'][j].get('pick_qty')))
                     pick_qty_change.picked_qty = int(data['goodsData'][j].get('pick_qty'))
                     pick_qty_change.picking_status = 1
+                    bin_qty_change.goods_qty = bin_qty_change.goods_qty - int(data['goodsData'][j].get('pick_qty'))
                     bin_qty_change.pick_qty = bin_qty_change.pick_qty - pick_qty_change.pick_qty
                     bin_qty_change.picked_qty = bin_qty_change.picked_qty + int(data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.save()
@@ -1714,6 +1706,13 @@ class DnPickedViewSet(viewsets.ModelViewSet):
             return Response({"Detail": "success"}, status=200)
 
     def update(self, request, *args, **kwargs):
+        delete_data = stockbin.objects.filter(openid=self.request.auth.openid,
+                                              goods_qty=0,
+                                              pick_qty=0,
+                                              picked_qty=0)
+        if delete_data.exists():
+            for i in delete_data:
+                i.delete()
         data = self.request.data
         qs = self.get_queryset().filter(dn_code=data['dn_code']).first()
         if qs.dn_status != 3:
@@ -1744,6 +1743,7 @@ class DnPickedViewSet(viewsets.ModelViewSet):
                                                                 data['goodsData'][j].get('goods_code'))).first()
                 dn_detail = DnDetailModel.objects.filter(openid=self.request.auth.openid,
                                                          dn_code=str(data['dn_code']),
+                                                         customer=str(data['customer']),
                                                          goods_code=str(data['goodsData'][j].get('goods_code'))).first()
                 bin_qty_change = stockbin.objects.filter(openid=self.request.auth.openid,
                                                          t_code=str(data['goodsData'][j].get('t_code'))).first()
@@ -1758,6 +1758,7 @@ class DnPickedViewSet(viewsets.ModelViewSet):
                                                  goods_code=bin_qty_change.goods_code,
                                                  goods_desc=bin_qty_change.goods_desc,
                                                  goods_qty=0 - int(data['goodsData'][j].get('picked_qty')),
+                                                 store_code=bin_qty_change.t_code,
                                                  creater=str(staff_name)
                                                  )
                 cur_date = timezone.now().date()
@@ -1771,36 +1772,46 @@ class DnPickedViewSet(viewsets.ModelViewSet):
                                           goods_code=bin_qty_change.goods_code,
                                           create_time__gte=cur_date).update(goods_qty=cycle_qty)
                 if int(data['goodsData'][j].get('picked_qty')) == pick_qty_change.pick_qty:
+                    goods_qty_change.onhand_stock = goods_qty_change.onhand_stock - int(
+                        data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.pick_stock = goods_qty_change.pick_stock - int(
                         data['goodsData'][j].get('picked_qty'))
                     goods_qty_change.picked_stock = goods_qty_change.picked_stock + int(
                         data['goodsData'][j].get('picked_qty'))
                     pick_qty_change.picked_qty = int(data['goodsData'][j].get('picked_qty'))
                     pick_qty_change.picking_status = 1
+                    bin_qty_change.goods_qty = bin_qty_change.goods_qty - int(data['goodsData'][j].get('pick_qty'))
                     bin_qty_change.pick_qty = bin_qty_change.pick_qty - int(data['goodsData'][j].get('picked_qty'))
                     bin_qty_change.picked_qty = bin_qty_change.picked_qty + int(data['goodsData'][j].get('picked_qty'))
                     goods_qty_change.save()
                     pick_qty_change.save()
                     bin_qty_change.save()
                 elif int(data['goodsData'][j].get('picked_qty')) < pick_qty_change.pick_qty:
+                    goods_qty_change.onhand_stock = goods_qty_change.onhand_stock - int(
+                        data['goodsData'][j].get('pick_qty'))
                     goods_qty_change.pick_stock = goods_qty_change.pick_stock - dn_detail.pick_qty
                     goods_qty_change.picked_stock = goods_qty_change.picked_stock + int(
                         data['goodsData'][j].get('picked_qty'))
+                    goods_qty_change.can_order_stock = goods_qty_change.can_order_stock + (
+                                int(pick_qty_change.pick_qty) - int(
+                            data['goodsData'][j].get('pick_qty')))
                     pick_qty_change.picked_qty = int(data['goodsData'][j].get('picked_qty'))
                     pick_qty_change.picking_status = 1
+                    bin_qty_change.goods_qty = bin_qty_change.goods_qty - pick_qty_change.pick_qty
                     bin_qty_change.pick_qty = bin_qty_change.pick_qty - pick_qty_change.pick_qty
                     bin_qty_change.picked_qty = bin_qty_change.picked_qty + int(data['goodsData'][j].get('picked_qty'))
                     goods_qty_change.save()
                     pick_qty_change.save()
                     bin_qty_change.save()
                 dn_detail.picked_qty = dn_detail.picked_qty + int(data['goodsData'][j].get('picked_qty'))
-                if dn_detail.dn_status == 3:
-                    dn_detail.dn_status = 4
                 if dn_detail.pick_qty > 0:
                     dn_detail.pick_qty = 0
-                dn_detail.save()
-            if DnDetailModel.objects.filter(openid=self.request.auth.openid, dn_code=str(data['dn_code']), dn_status=3).exists() is False:
-                qs.save()
+                if PickingListModel.objects.filter(openid=self.request.auth.openid, dn_code=str(data['dn_code']), picking_status=0).exists():
+                    dn_detail.save()
+                else:
+                    qs.save()
+                    dn_detail.dn_status = 4
+                    dn_detail.save()
             return Response({"Detail": "success"}, status=200)
 
 class DnDispatchViewSet(viewsets.ModelViewSet):
@@ -1858,7 +1869,6 @@ class DnDispatchViewSet(viewsets.ModelViewSet):
                     goods_qty_change = stocklist.objects.filter(openid=self.request.auth.openid,
                                                                 goods_code=dn_detail[i].goods_code).first()
                     goods_qty_change.goods_qty = goods_qty_change.goods_qty - dn_detail[i].picked_qty
-                    goods_qty_change.onhand_stock = goods_qty_change.onhand_stock - dn_detail[i].picked_qty
                     goods_qty_change.picked_stock = goods_qty_change.picked_stock - dn_detail[i].picked_qty
                     dn_detail[i].dn_status = 5
                     dn_detail[i].intransit_qty = dn_detail[i].picked_qty
@@ -1871,18 +1881,19 @@ class DnDispatchViewSet(viewsets.ModelViewSet):
                                                              goods_code=pick_qty_change[j].goods_code,
                                                              bin_name=pick_qty_change[j].bin_name,
                                                              t_code=pick_qty_change[j].t_code).first()
-                    bin_qty_change.goods_qty = bin_qty_change.goods_qty - pick_qty_change[j].picked_qty
-                    if bin_qty_change.goods_qty == 0:
-                        bin_qty_change.delete()
+                    bin_qty_change.picked_qty = bin_qty_change.picked_qty - pick_qty_change[j].picked_qty
+                    bin_qty_change.save()
+                    bin_stock_check = stockbin.objects.filter(openid=self.request.auth.openid,
+                                                              goods_code=pick_qty_change[j].goods_code,
+                                                              bin_name=pick_qty_change[j].bin_name,
+                                                              t_code=pick_qty_change[j].t_code).first()
+                    if bin_stock_check.goods_qty == 0 and bin_stock_check.pick_qty == 0 and bin_stock_check.picked_qty == 0:
+                        bin_stock_check.delete()
                         if stockbin.objects.filter(openid=self.request.auth.openid,
-                                                   bin_name=pick_qty_change[j].bin_name).exists():
-                            pass
-                        else:
+                                                   bin_name=bin_stock_check.bin_name,
+                                                   goods_qty__gt=0).exists() is False:
                             binset.objects.filter(openid=self.request.auth.openid,
                                                   bin_name=pick_qty_change[j].bin_name).update(empty_label=True)
-                    else:
-                        bin_qty_change.picked_qty = bin_qty_change.picked_qty - pick_qty_change[j].picked_qty
-                        bin_qty_change.save()
                 driverdispatch.objects.create(openid=self.request.auth.openid,
                                               driver_name=driver.driver_name,
                                               dn_code=str(data['dn_code']),
